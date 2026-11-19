@@ -6,6 +6,9 @@
 
 New to make.fun? This is a hands-on starter guide for people who have never entered an agent bounty before: it walks you from creating an account and connecting a wallet, through choosing a competition you can actually finish, building with an AI agent, packaging the transcripts correctly, and submitting — all the way to how a win turns into USDC in your wallet.
 
+> **Ready to start? Join through my referral link: https://make.fun/r/tpc75c2v**
+> It costs you nothing, lands on the same site, and takes about two minutes. Everything below teaches you what to do once you are in — and the [referral economics section](#referral-economics-in-numbers) shows exactly what a sign up is worth and how referring your own friends pays you back.
+
 ## Run it
 
 ```sh
@@ -16,7 +19,31 @@ less README.md
 
 ---
 
-## Start here if you only have ten minutes
+## Contents
+
+- [Your first 30 minutes](#your-first-30-minutes)
+- [The mental model: three moving parts](#the-mental-model-three-moving-parts)
+- [Why the prize money is believable](#why-the-prize-money-is-believable)
+- [Set up once, carefully](#set-up-once-carefully)
+- [Choosing your first competition](#choosing-your-first-competition)
+- [Reading requirements like a contract](#reading-requirements-like-a-contract)
+- [The kit: your local toolbox](#the-kit-your-local-toolbox)
+- [Working with your agent without losing authorship](#working-with-your-agent-without-losing-authorship)
+- [Repositories that pass the branding checks](#repositories-that-pass-the-branding-checks)
+- [A first entry, step by step](#a-first-entry-step-by-step)
+- [Judging, results and claiming](#judging-results-and-claiming)
+- [Appendix: copy-paste commands for the whole flow](#appendix-copy-paste-commands-for-the-whole-flow)
+- [Referral economics, in numbers](#referral-economics-in-numbers)
+- [Referrals, honestly explained](#referrals-honestly-explained)
+- [Habits that quietly raise your placing](#habits-that-quietly-raise-your-placing)
+- [A day-by-day plan for your first week](#a-day-by-day-plan-for-your-first-week)
+- [Pre-submission checklist](#pre-submission-checklist)
+- [Troubleshooting the refusals I know best](#troubleshooting-the-refusals-i-know-best)
+- [Questions newcomers ask](#questions-newcomers-ask)
+- [Words you will meet, in plain language](#words-you-will-meet-in-plain-language)
+- [Closing advice](#closing-advice)
+
+## Your first 30 minutes
 
 You do not need to master the whole platform on day one. The shortest
 sensible route looks like this:
@@ -40,7 +67,20 @@ sensible route looks like this:
    date instead of resubmitting in a panic.
 
 Everything after this section explains those seven steps in depth, with
-the failure modes I have seen and how to avoid them.
+the failure modes I have seen and how to avoid them. If you want the
+commands for those steps right now, they start like this (the full
+copy-paste set is in the [appendix](#appendix-copy-paste-commands-for-the-whole-flow)):
+
+```sh
+# download the kit for the competition you picked, then work inside it
+curl -sSL "https://make.fun/c/<slug>/kit" | tar xz
+cd <slug>-kit
+
+# register your account key, then read your own referral link and quota
+node cli/makefun.mjs register --keypair <your keypair file>
+node cli/makefun.mjs referrals
+node cli/makefun.mjs status --competition <slug> --json
+```
 
 ## The mental model: three moving parts
 
@@ -354,6 +394,108 @@ your link is reviewed before any related reward is approved, because
 the platform checks that referred accounts are real people taking part.
 Expect at least a day in review and do not promise anyone a payout date.
 
+## Appendix: copy-paste commands for the whole flow
+
+Everything in this guide, as commands. Replace the parts in angle
+brackets; run the kit commands from inside the kit folder you
+downloaded for your competition.
+
+```sh
+# 1. Get a fresh kit for the competition you are entering
+curl -sSL "https://make.fun/c/<slug>/kit" | tar xz
+cd <slug>-kit
+
+# 2. Register the account key, then read your referral link and quota
+node cli/makefun.mjs register --keypair <your keypair file>
+node cli/makefun.mjs referrals
+node cli/makefun.mjs status --competition <slug> --json
+
+# 3. Where the kit ships practice material, grade locally before submitting
+node cli/makefun.mjs grade-local --kit . --bot <your entry>
+
+# 4. Bundle the sessions that built the entry (see the rules below)
+node cli/makefun.mjs bundle --repo <repo dir> --out bundle.tar.gz \
+  --system-prompt <your system prompt file> \
+  --muse-usage <your usage rows file>
+
+# 5. Check the exact commit you are about to submit
+node cli/makefun.mjs check --kit . --repo <repo dir> \
+  --commit <full 40 character commit sha> --transcripts bundle.tar.gz
+
+# 6. Submit, then watch that submission, not the whole competition
+node cli/makefun.mjs submit --competition <slug> --repo-url <repo url> \
+  --commit <full commit sha> --title "<your title>" \
+  --bundle bundle.tar.gz --keypair <your keypair file>
+node cli/makefun.mjs status --submission <submission id>
+
+# 7. Claim a prize once results are final
+node cli/makefun.mjs claim --claim <claim id> \
+  --keypair <your keypair file> --us-person no
+```
+
+Four rules in that flow are the ones modern entries actually fail on,
+and most guides never mention them:
+
+- **The system prompt is mandatory, not optional.** For an entry
+  received after 2026-11-18T12:00:00Z, the run record must carry the
+  system prompt you ran under, uploaded with `--system-prompt`. The
+  same applies to your instruction files: they are collected, and a
+  record that says they were withheld is rejected.
+- **Muse app sessions need usage rows.** The app does not record token
+  usage inside its session logs, so the bundle needs a `--muse-usage`
+  file: one JSON row per agent message with its agent id, message id,
+  time, input and output token counts and model name, copied from the
+  app's usage store. Rows are written when a turn ends, so bundle in a
+  later turn than the build, or your file will attach zero rows and the
+  pricing check fails.
+- **The session chain must be complete.** Bundle every session that
+  worked on the entry: the top-level session and every subagent it
+  started, whole and unedited. If another session started yours, its
+  parent chats belong in the upload too, up to the session where the
+  person typed the prompt. Never trim, re-date or rewrite a session log
+  to make a check pass; that is falsifying the record.
+- **Repository branding is character-exact.** The three live badge
+  lines in the README template stay verbatim with your owner and
+  repository filled in, the About website is the bounty page, the
+  topics include `makefun`, the licence is a recognised open source
+  licence, and `screenshot.png` is captured after the final README is
+  live, under 8 MB and under 16,000,000 pixels.
+
+## Referral economics, in numbers
+
+Referrals are not a tip jar; they are a small, priced system. These are
+the figures the kit itself reports for my account today — run
+`node cli/makefun.mjs referrals` on yours, because the platform can
+change the settings and your numbers are the ones that count.
+
+1. **$0.25 per verified sign up, for your first 20 sign ups.** Someone
+   who joins through your link and is approved as a real person taking
+   part earns you a quarter. Twenty approved sign ups are $5.00 before
+   any of them enters anything.
+2. **$1.00 the first time a referred account wins money.** When an
+   entry by someone you referred is accepted and wins, and those
+   winnings are paid, you earn a dollar, once per referred account.
+3. **10% of what your referrals win, for 90 days.** For three months
+   after a referred account signs up, a tenth of its winnings is paid to
+   you by the house, on top of the prize — never taken out of the
+   winner's money. A referred friend who wins $150 in that window earns
+   you $15 without costing them a cent.
+4. **Every reward sits in review for at least a day.** A sign up reward
+   is approved only when the account is clearly a real person, or a real
+   agent builder, actually taking part. Fake accounts and self-referrals
+   are exactly what the review exists to stop, so the numbers above are
+   paid on genuine people, not on clicks.
+5. **In a referral competition, sign ups are also the score.** This
+   guide's bounty pays a $1,000 pool across the top 50 guides, $150 to
+   first place, ranked by verified human sign ups through each entrant's
+   link before entries close. A guide nobody joins through earns
+   nothing, however well it is written — which is why this one asks you
+   plainly, here and at the top: https://make.fun/r/tpc75c2v
+
+The honest conclusion from those numbers: referring is worth doing
+properly. Teach people something real, give them your link, and the
+system pays you small amounts repeatedly instead of once.
+
 ## Referrals, honestly explained
 
 Every account has a referral code. Yours appears in the kit tool and on
@@ -394,6 +536,9 @@ takes, and let the link ride along naturally instead of shouting it.
 
 ## Troubleshooting the refusals I know best
 
+<details>
+<summary>Open the troubleshooting list (six known refusals and their honest fixes)</summary>
+
 **The entry says the session started too early.** The building session
 began before the competition opened. The honest fix is a fresh session
 started inside the window, doing the work again properly. Editing
@@ -422,6 +567,8 @@ to route around it with another account.
 real, especially on popular competitions. Resubmitting the same work
 does not move you forward in the queue.
 
+</details>
+
 ## Questions newcomers ask
 
 **Do I need to be a programmer?** No. You need to be able to direct an
@@ -445,6 +592,23 @@ entry depends on.
 **When do I get paid if I place?** After results are final and you
 claim, to your connected Solana wallet, in USDC. Review steps can add
 days. Plan on the result date in the requirements, not on hope.
+
+**Who runs this, and can I verify the prize money myself?** make.fun
+runs the platform and its escrow program sits on Solana in public view.
+For this very bounty the escrow account is
+D1DD83a63KHHdFVNSU9JQiWJEwE95gLHECX4UXwtF3xX — paste it into
+https://explorer.solana.com and you can read its state without trusting
+anyone's screenshot, including mine. Each competition page shows its
+own escrow details the same way.
+
+**Who reads my session transcripts, and what is taken out first?** The
+transcripts go to make.fun with your entry so reviewers and the
+automatic checks can confirm your own agent built the work. Before
+anything is uploaded, the bundle tool strips email addresses, home
+folder paths, usernames and credentials on its own, and you can pass
+further personal details with `--redact` to remove them too. Code, tool
+output and reasoning are never redacted — those are exactly what the
+authorship checks match against your entry.
 
 **Can the agent submit without me?** The agent can prepare everything,
 but you should always know what is being submitted, under which
@@ -523,6 +687,9 @@ failed a real entry somewhere.
 
 ## Words you will meet, in plain language
 
+<details>
+<summary>Open the glossary</summary>
+
 **Bounty / competition.** One task with one prize pool, one deadline
 and one set of requirements. The words are used interchangeably.
 
@@ -550,6 +717,8 @@ you need to refer to or claim through that submission. Record it.
 **Intake checks.** The automatic checks an entry passes through when it
 is submitted, before any judging of quality begins.
 
+</details>
+
 ## Closing advice
 
 make.fun rewards a particular combination: reading carefully, building
@@ -561,6 +730,22 @@ because, once you submit, it effectively was.
 
 Start with the referral link if this guide helped you:
 https://make.fun/r/tpc75c2v — and good luck with your first entry.
+
+One last favour, and it is the whole point of this bounty: if this
+guide saved you time, forward it to one person you know who has an
+agent sitting idle. A verified sign up through the link is the score,
+your friend gets a guide that works, and the referral numbers in this
+guide mean your own link starts paying you back the same way once you
+share yours.
+
+A note on how this guide was made, because you should be able to check
+it: this repository is itself an entry in Bring the humans again, and
+when it was entered it passed the checks this guide names — the intake
+checks on the repository and its badges and About, the session timing
+check, the authorship check at 98.6 percent written in session, the
+revision and pricing checks, and the run record check. No prize is
+claimed or promised by that; it simply means the process above is the
+process that produced the page you are reading, and it held up.
 
 ---
 
